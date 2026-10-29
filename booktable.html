@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book a Table - Indian Spoon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Open Sans', sans-serif; }
+    .brand-pink { background-color: #E53E8A; }
+    .text-brand-pink { color: #E53E8A; }
+    .dropdown:hover .dropdown-menu { display: block; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+  <!-- Top Bar -->
+  <div class="bg-[#111111] text-white text-[11px] py-1.5 px-4 flex justify-between items-center">
+    <div class="flex gap-4">
+      <span>📍 THE BRIDGE WROXHAM, WROXHAM NR12 8DA</span>
+      <span>📞 01603320231</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-[#111111] border-b-2 border-brand-pink text-white py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+    <div id="secret-logo" class="text-3xl font-serif text-brand-pink tracking-wider cursor-pointer select-none">
+      Indian Spoon
+    </div>
+    
+    <nav class="hidden md:flex gap-6 text-sm font-semibold items-center">
+      <a href="index.html" class="hover:text-brand-pink">Home</a>
+      <a href="index.html#intro" class="hover:text-brand-pink">About Us</a>
+      <a href="index.html#offers" class="hover:text-brand-pink">Offers</a>
+      <a href="index.html#foodgallery" class="hover:text-brand-pink">Gallery</a>
+      <a href="index.html#maps" class="hover:text-brand-pink">Contact</a>
+      <a href="booktable.html" class="text-brand-pink">Book Table</a>
+      
+      <!-- Menu Dropdown -->
+      <div class="relative dropdown">
+        <a href="order.html" class="hover:text-brand-pink font-bold flex items-center gap-1">
+          Menu <span class="text-xs">▼</span>
+        </a>
+        <div class="dropdown-menu absolute left-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg hidden z-50">
+          <a href="order.html#starters" class="block px-4 py-2 hover:bg-gray-100">Starters</a>
+          <a href="order.html#tandoori" class="block px-4 py-2 hover:bg-gray-100">Tandoori Dishes</a>
+          <a href="order.html#classic" class="block px-4 py-2 hover:bg-gray-100">Classic Indian</a>
+          <a href="order.html#rice" class="block px-4 py-2 hover:bg-gray-100">Rice & Naan</a>
+        </div>
+      </div>
+    </nav>
+    
+    <a href="order.html" class="brand-pink text-white px-6 py-2.5 rounded-sm font-bold text-sm tracking-wider hover:bg-pink-600 transition">ORDER ONLINE</a>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto p-4 md:p-8 flex justify-center items-center min-h-[70vh]">
+    
+    <div class="bg-white border border-gray-200 p-8 shadow-md rounded-sm w-full max-w-md">
+      <h2 class="text-3xl font-serif text-brand-pink mb-2 text-center">Book a Table</h2>
+      <p class="text-gray-500 text-center mb-6 text-sm">Reserve your spot at Indian Spoon</p>
+      
+      <form id="booking-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Your Name</label>
+          <input name="name" required placeholder="Enter your full name" class="w-full border border-gray-300 p-2.5 text-sm rounded-sm focus:outline-none focus:border-brand-pink">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Phone Number</label>
+          <input name="phone" required placeholder="Enter your phone" class="w-full border border-gray-300 p-2.5 text-sm rounded-sm focus:outline-none focus:border-brand-pink">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1">Date</label>
+            <input name="date" required type="date" class="w-full border border-gray-300 p-2.5 text-sm rounded-sm focus:outline-none focus:border-brand-pink">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Time</label>
+            <input name="time" required type="time" class="w-full border border-gray-300 p-2.5 text-sm rounded-sm focus:outline-none focus:border-brand-pink">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Number of Guests</label>
+          <input name="guests" required type="number" min="1" value="2" class="w-full border border-gray-300 p-2.5 text-sm rounded-sm focus:outline-none focus:border-brand-pink">
+        </div>
+        <button type="submit" class="w-full bg-[#111] text-white py-3 font-bold rounded-sm hover:bg-gray-800 transition">Confirm Booking</button>
+      </form>
+    </div>
+
+  </main>
+
+  <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded shadow-lg hidden z-50 font-bold"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9ilYCitIbojfjZCawtN63CPdGjyD9l44",
+      authDomain: "indianspoon-21587.firebaseapp.com",
+      projectId: "indianspoon-21587",
+      storageBucket: "indianspoon-21587.firebasestorage.app",
+      messagingSenderId: "1095985645179",
+      appId: "1:1095985645179:web:a6703f9fffcfe5dc5d84de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // সিক্রেট লোগো ক্লিক
+    let clickCount = 0;
+    let clickTimer;
+    document.getElementById("secret-logo").addEventListener("click", () => {
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+      if (clickCount === 5) {
+        window.location.href = "admin.html";
+      }
+    });
+
+    // বুকিং ফর্ম সাবমিট
+    document.getElementById("booking-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        await addDoc(collection(db, "reservations"), {
+          customerName: fd.get("name"),
+          customerPhone: fd.get("phone"),
+          date: fd.get("date"),
+          timeSlot: fd.get("time"),
+          partySize: parseInt(fd.get("guests")),
+          status: "pending",
+          createdAt: serverTimestamp()
+        });
+        e.target.reset();
+        showToast("✅ Booking submitted successfully!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    });
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.remove("hidden");
+      setTimeout(() => t.classList.add("hidden"), 3000);
+    }
+  </script>
+</body>
+</html>

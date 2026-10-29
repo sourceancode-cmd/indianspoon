@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Online - Indian Spoon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Open Sans', sans-serif; }
+    .brand-gold { background-color: #C89B3C; }
+    .text-brand-gold { color: #C89B3C; }
+    .hover-brand-gold:hover { background-color: #b0862e; }
+  </style>
+</head>
+<body class="bg-[#FDFBF7] font-sans text-[#1A1A1A]">
+
+  <!-- Header -->
+  <header class="bg-[#1A1A1A] border-b-2 border-[#C89B3C] text-white py-4 px-6 flex justify-between items-center sticky top-0 z-50 shadow-lg">
+    <div id="secret-logo" class="text-3xl font-serif text-brand-gold tracking-wider cursor-pointer select-none">Indian Spoon</div>
+    <nav class="hidden md:flex gap-6 text-sm font-semibold items-center text-gray-300">
+      <a href="index.html" class="hover:text-brand-gold transition">Home</a>
+      <a href="booktable.html" class="hover:text-brand-gold transition">Book Table</a>
+    </nav>
+    <a href="order.html" class="brand-gold text-[#1A1A1A] px-6 py-2.5 rounded-sm font-bold text-sm tracking-wider hover-brand-gold transition shadow-md">ORDER ONLINE</a>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-4 md:p-8 grid md:grid-cols-3 gap-8 min-h-screen">
+    
+    <!-- Menu Section -->
+    <section class="md:col-span-2">
+      <h2 class="text-3xl font-serif text-[#1A1A1A] mb-8 mt-4 border-b-2 border-[#C89B3C] pb-2 inline-block">Our Menu</h2>
+      <div id="menu-container" class="space-y-4">
+        <p class="text-gray-500 italic">Loading menu...</p>
+      </div>
+    </section>
+
+    <!-- Cart Section -->
+    <aside>
+      <div class="sticky top-24 border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden">
+        <div class="bg-[#1A1A1A] text-brand-gold p-5 text-xl font-serif font-bold border-b border-[#C89B3C]">Your Order</div>
+        <div class="p-5">
+          <div class="mb-5">
+            <select id="order-type" class="w-full border border-gray-300 p-2.5 text-sm font-semibold rounded-md outline-none focus:border-[#C89B3C]">
+              <option value="collection">COLLECTION</option>
+              <option value="delivery">DELIVERY</option>
+              <option value="dine-in">DINE-IN</option>
+            </select>
+          </div>
+          <div id="cart-items" class="space-y-3 mb-5 max-h-60 overflow-y-auto border-t border-gray-200 pt-4">
+            <p class="text-sm text-gray-500 italic">Your cart is empty.</p>
+          </div>
+          <div id="cart-total" class="border-t border-gray-300 pt-4 font-bold text-xl mb-5 text-[#1A1A1A]"></div>
+          <div class="space-y-3">
+            <button onclick="placeOrder('stripe')" class="w-full bg-[#1A1A1A] text-brand-gold py-3 rounded-md font-bold hover:bg-black transition">Pay Online (Stripe)</button>
+            <button onclick="placeOrder('restaurant')" class="w-full bg-white border-2 border-[#C89B3C] text-[#1A1A1A] py-3 rounded-md font-bold hover:bg-[#FDFBF7] transition">Pay at Restaurant</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <div id="toast" class="fixed bottom-4 right-4 bg-[#C89B3C] text-white px-6 py-3 rounded-md shadow-lg hidden z-50 font-bold"></div>
+
+  <!-- Firebase & Logic Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9ilYCitIbojfjZCawtN63CPdGjyD9l44",
+      authDomain: "indianspoon-21587.firebaseapp.com",
+      projectId: "indianspoon-21587",
+      storageBucket: "indianspoon-21587.firebasestorage.app",
+      messagingSenderId: "1095985645179",
+      appId: "1:1095985645179:web:a6703f9fffcfe5dc5d84de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let cart = [];
+    let menuDataGrouped = {};
+
+    // 5-click Admin Secret
+    let clickCount = 0;
+    let clickTimer;
+    document.getElementById("secret-logo").addEventListener("click", () => {
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+      if (clickCount === 5) window.location.href = "admin.html";
+    });
+
+    // Fetch Menu from Firestore
+    onSnapshot(collection(db, "menu"), (snap) => {
+      menuDataGrouped = {};
+      
+      snap.forEach(d => {
+        const item = d.data();
+        if(!item.isAvailable) return;
+        if (!menuDataGrouped[item.category]) {
+          menuDataGrouped[item.category] = [];
+        }
+        menuDataGrouped[item.category].push({ id: d.id, ...item });
+      });
+      
+      renderMenu();
+    });
+
+    function renderMenu() {
+      const container = document.getElementById("menu-container");
+      const categories = Object.keys(menuDataGrouped);
+
+      if (categories.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 italic">No items available right now. Please add items from the POS.</p>';
+        return;
+      }
+
+      container.innerHTML = categories.map((catName, index) => `
+        <div id="cat-${index}" class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm scroll-mt-24">
+          <button onclick="toggleCategory(${index})" class="w-full text-left p-4 bg-gray-50 hover:bg-gray-100 font-bold flex justify-between items-center text-lg text-[#1A1A1A] transition">
+            <span>👨‍🍳 ${catName}</span>
+            <span id="icon-${index}" class="text-xl text-brand-gold">+</span>
+          </button>
+          <div id="cat-content-${index}" class="hidden border-t border-gray-200 p-5 grid gap-5">
+            ${menuDataGrouped[catName].map(item => `
+              <div class="flex justify-between items-center border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                <div class="pr-4">
+                  <h4 class="font-bold text-[16px] text-[#1A1A1A]">${item.name}</h4>
+                  <p class="text-xs text-gray-500 mt-1 leading-relaxed">${item.description}</p>
+                  <p class="font-bold text-brand-gold mt-2 text-lg">£${item.price.toFixed(2)}</p>
+                </div>
+                <button onclick="addToCart('${item.id}')" class="brand-gold text-[#1A1A1A] px-5 py-2 rounded-md text-sm font-bold shrink-0 hover-brand-gold transition shadow-sm">Add</button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    window.toggleCategory = (index) => {
+      const div = document.getElementById(`cat-content-${index}`);
+      const icon = document.getElementById(`icon-${index}`);
+      if (div.classList.contains("hidden")) {
+        div.classList.remove("hidden");
+        icon.textContent = "−";
+      } else {
+        div.classList.add("hidden");
+        icon.textContent = "+";
+      }
+    };
+
+    window.addToCart = (id) => {
+      let item;
+      Object.values(menuDataGrouped).forEach(items => {
+        const found = items.find(i => i.id === id);
+        if (found) item = found;
+      });
+      
+      const existing = cart.find(i => i.id === id);
+      if (existing) existing.qty++;
+      else cart.push({ ...item, qty: 1 });
+      
+      renderCart();
+      showToast(`${item.name} added`);
+    };
+
+    function renderCart() {
+      const cartDiv = document.getElementById("cart-items");
+      if (cart.length === 0) {
+        cartDiv.innerHTML = '<p class="text-sm text-gray-500 italic">Your cart is empty.</p>';
+        document.getElementById("cart-total").textContent = "";
+        return;
+      }
+      cartDiv.innerHTML = cart.map(item => `
+        <div class="flex justify-between items-start text-sm border-b border-gray-100 pb-3">
+          <div>
+            <div class="font-bold text-[#1A1A1A]">${item.name}</div>
+            <div class="text-gray-500 text-xs mt-1">£${item.price.toFixed(2)} × ${item.qty}</div>
+          </div>
+          <div class="flex gap-1 items-center">
+            <button onclick="changeQty('${item.id}', -1)" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-md font-bold hover:bg-gray-300 text-gray-700 transition">−</button>
+            <span class="w-6 text-center font-semibold">${item.qty}</span>
+            <button onclick="changeQty('${item.id}', 1)" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-md font-bold hover:bg-gray-300 text-gray-700 transition">+</button>
+          </div>
+        </div>
+      `).join("");
+      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      document.getElementById("cart-total").textContent = `Total: £${total.toFixed(2)}`;
+    }
+
+    window.changeQty = (id, delta) => {
+      const item = cart.find(i => i.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+      renderCart();
+    };
+
+    window.placeOrder = async (paymentMethod) => {
+      if (cart.length === 0) return alert("Cart is empty");
+      
+      // Stripe Payment Logic
+      if (paymentMethod === 'stripe') {
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        try {
+          const response = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: total })
+          });
+          const data = await response.json();
+          
+          if (data.url) {
+            window.location.href = data.url; 
+          } else {
+            alert("Stripe Error: " + (data.error || "Unknown error"));
+          }
+        } catch (error) {
+          alert("Error connecting to Stripe: " + error.message);
+        }
+        return;
+      }
+
+      // Pay at Restaurant Logic
+      const name = prompt("Your name:");
+      if (!name) return;
+      const phone = prompt("Your phone:");
+      if (!phone) return;
+
+      const orderType = document.getElementById("order-type").value;
+      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      
+      try {
+        await addDoc(collection(db, "orders"), {
+          customerName: name,
+          customerPhone: phone,
+          items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
+          orderType: orderType,
+          total: parseFloat(total.toFixed(2)),
+          status: "pending",
+          paymentMethod: paymentMethod,
+          createdAt: serverTimestamp()
+        });
+        cart = [];
+        renderCart();
+        showToast("✅ Order placed successfully!");
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    };
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.remove("hidden");
+      setTimeout(() => t.classList.add("hidden"), 3000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Indian Spoon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Open Sans', sans-serif; }
+    .brand-gold { background-color: #C89B3C; }
+    .text-brand-gold { color: #C89B3C; }
+    .hover-brand-gold:hover { background-color: #b0862e; }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center bg-[#1A1A1A]">
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-96 border-t-4 border-[#C89B3C]">
+      <h2 class="text-3xl font-serif mb-6 text-center text-[#1A1A1A]">Admin Login</h2>
+      <input id="admin-email" type="email" placeholder="Email" class="w-full border border-gray-300 p-3 mb-4 rounded-md focus:border-[#C89B3C] outline-none">
+      <input id="admin-password" type="password" placeholder="Password" class="w-full border border-gray-300 p-3 mb-4 rounded-md focus:border-[#C89B3C] outline-none">
+      <button onclick="loginAdmin()" class="w-full brand-gold text-[#1A1A1A] py-3 rounded-md font-bold hover-brand-gold transition">Login</button>
+      <a href="index.html" class="block text-center text-sm text-gray-500 mt-4 underline hover:text-[#C89B3C]">← Back to Website</a>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" class="hidden min-h-screen">
+    <header class="bg-[#1A1A1A] text-white p-4 shadow-lg border-b-2 border-[#C89B3C]">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-serif text-brand-gold">🔧 Admin Dashboard</h1>
+        <div class="flex gap-4 items-center">
+          <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">← Live Site</a>
+          <button onclick="logoutAdmin()" class="text-sm bg-red-600 px-4 py-1.5 rounded text-white font-semibold hover:bg-red-700 transition">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 mt-6">
+      <!-- Main Tabs -->
+      <div class="flex border-b border-gray-300 mb-6 space-x-1">
+        <button onclick="switchMainTab('orders')" id="tab-orders" class="px-6 py-3 font-bold bg-[#1A1A1A] text-[#C89B3C] rounded-t-md">📦 Orders</button>
+        <button onclick="switchMainTab('menu')" id="tab-menu" class="px-6 py-3 font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-t-md">🍔 Menu Manager</button>
+        <button onclick="switchMainTab('bookings')" id="tab-bookings" class="px-6 py-3 font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-t-md">📅 Reservations</button>
+      </div>
+
+      <!-- 1. Orders Tab -->
+      <div id="content-orders">
+        <div class="flex gap-2 mb-6">
+          <button onclick="filterOrders('pending')" id="subtab-pending" class="px-5 py-2 rounded-md font-bold text-sm bg-yellow-500 text-white shadow">New Orders</button>
+          <button onclick="filterOrders('completed')" id="subtab-completed" class="px-5 py-2 rounded-md font-bold text-sm bg-white text-gray-600 border border-gray-300 hover:bg-gray-50">Completed</button>
+          <button onclick="filterOrders('cancelled')" id="subtab-cancelled" class="px-5 py-2 rounded-md font-bold text-sm bg-white text-gray-600 border border-gray-300 hover:bg-gray-50">Cancelled</button>
+        </div>
+        <div id="orders-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- 2. Menu Manager Tab -->
+      <div id="content-menu" class="hidden">
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6 border-t-4 border-[#C89B3C]">
+          <h3 id="form-title" class="text-xl font-bold mb-4 text-[#1A1A1A]">Add New Menu Item</h3>
+          <form id="add-menu-form" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <input id="menu-name" name="name" required placeholder="Item Name" class="border p-2 rounded col-span-1 md:col-span-1">
+            <input id="menu-desc" name="description" required placeholder="Description" class="border p-2 rounded col-span-1 md:col-span-2">
+            <input id="menu-price" name="price" required type="number" step="0.01" placeholder="Price (£)" class="border p-2 rounded col-span-1 md:col-span-1">
+            
+            <!-- Dynamic Category Input with + Button -->
+            <div class="col-span-1 md:col-span-1 flex gap-1">
+              <input id="menu-category" name="category" list="category-list" required placeholder="Category" class="border p-2 rounded w-full">
+              <button type="button" onclick="addNewCategoryPrompt()" title="Add New Category" class="bg-gray-800 text-white px-3 rounded font-bold hover:bg-gray-900 transition">+</button>
+              <datalist id="category-list">
+                <option value="STARTERS"></option>
+                <option value="TANDOORI DISHES"></option>
+                <option value="CLASSIC INDIAN"></option>
+                <option value="RICE & NAAN"></option>
+                <option value="BIRIYANI"></option>
+                <option value="DESSERTS"></option>
+                <option value="DRINKS"></option>
+              </datalist>
+            </div>
+            
+            <div class="md:col-span-5 flex gap-2 mt-2">
+              <button type="submit" id="btn-submit" class="flex-1 bg-[#1A1A1A] text-brand-gold font-bold py-2 rounded hover:bg-black transition">Add Item</button>
+              <button type="button" onclick="cancelEdit()" id="btn-cancel-edit" class="hidden flex-1 bg-red-600 text-white font-bold py-2 rounded hover:bg-red-700 transition">Cancel Edit</button>
+            </div>
+          </form>
+        </div>
+        <div id="menu-list" class="grid md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- 3. Bookings Tab -->
+      <div id="content-bookings" class="hidden space-y-4">
+        <div id="bookings-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9ilYCitIbojfjZCawtN63CPdGjyD9l44",
+      authDomain: "indianspoon-21587.firebaseapp.com",
+      projectId: "indianspoon-21587",
+      storageBucket: "indianspoon-21587.firebasestorage.app",
+      messagingSenderId: "1095985645179",
+      appId: "1:1095985645179:web:a6703f9fffcfe5dc5d84de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Date Formatter
+    function formatDate(timestamp) {
+      if (!timestamp) return 'Just now';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Auth Logic
+    window.loginAdmin = async () => {
+      const email = document.getElementById("admin-email").value;
+      const password = document.getElementById("admin-password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        alert("Login Failed: " + error.message);
+      }
+    };
+
+    window.logoutAdmin = async () => { await signOut(auth); };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("login-screen").classList.add("hidden");
+        document.getElementById("admin-panel").classList.remove("hidden");
+        loadData();
+      } else {
+        document.getElementById("login-screen").classList.remove("hidden");
+        document.getElementById("admin-panel").classList.add("hidden");
+      }
+    });
+
+    // Tabs
+    window.switchMainTab = (tab) => {
+      ['orders', 'menu', 'bookings'].forEach(t => {
+        document.getElementById(`content-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).className = "px-6 py-3 font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-t-md";
+      });
+      document.getElementById(`content-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}`).className = "px-6 py-3 font-bold bg-[#1A1A1A] text-[#C89B3C] rounded-t-md";
+    };
+
+    let allOrders = [];
+    let currentOrderFilter = 'pending';
+
+    window.filterOrders = (status) => {
+      currentOrderFilter = status;
+      ['pending', 'completed', 'cancelled'].forEach(s => {
+        const btn = document.getElementById(`subtab-${s}`);
+        if (s === status) {
+          btn.className = s === 'pending' ? "px-5 py-2 rounded-md font-bold text-sm bg-yellow-500 text-white shadow" 
+                        : s === 'completed' ? "px-5 py-2 rounded-md font-bold text-sm bg-green-600 text-white shadow"
+                        : "px-5 py-2 rounded-md font-bold text-sm bg-red-600 text-white shadow";
+        } else {
+          btn.className = "px-5 py-2 rounded-md font-bold text-sm bg-white text-gray-600 border border-gray-300 hover:bg-gray-50";
+        }
+      });
+      renderOrders();
+    };
+
+    function renderOrders() {
+      const filtered = allOrders.filter(o => o.status === currentOrderFilter);
+      if(filtered.length === 0) {
+        document.getElementById("orders-list").innerHTML = `<p class="text-gray-500 italic col-span-3">No ${currentOrderFilter} orders found.</p>`;
+        return;
+      }
+      document.getElementById("orders-list").innerHTML = filtered.map(o => `
+        <div class="bg-white p-5 rounded-lg shadow-md border-l-4 ${o.status === 'completed' ? 'border-green-500' : o.status === 'cancelled' ? 'border-red-500' : 'border-yellow-500'}">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-lg">${o.customerName}</span>
+            <span class="text-xs px-2 py-1 rounded font-bold uppercase ${o.status === 'completed' ? 'bg-green-100 text-green-700' : o.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${o.status}</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-2">🕒 ${formatDate(o.createdAt)}</p>
+          <p class="text-sm text-gray-600 mb-2">📞 ${o.customerPhone} | ${o.orderType || 'Collection'}</p>
+          <ul class="text-sm mb-3 border-t pt-2">${o.items.map(i => `<li>${i.qty}× ${i.name} <span class="float-right font-semibold">£${(i.price * i.qty).toFixed(2)}</span></li>`).join("")}</ul>
+          <p class="font-bold text-lg mb-3 text-[#C89B3C]">Total: £${o.total.toFixed(2)}</p>
+          <div class="flex gap-2 mt-2">
+            ${o.status === 'pending' ? `
+              <button onclick="updateOrder('${o.id}', 'completed')" class="flex-1 bg-green-600 text-white py-1.5 rounded text-sm font-semibold hover:bg-green-700 transition">Complete</button>
+              <button onclick="updateOrder('${o.id}', 'cancelled')" class="flex-1 bg-red-600 text-white py-1.5 rounded text-sm font-semibold hover:bg-red-700 transition">Cancel</button>
+            ` : `<p class="text-xs text-gray-500 text-center w-full py-1 bg-gray-50 rounded">Processed</p>`}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ====== ADD NEW CATEGORY LOGIC ======
+    window.addNewCategoryPrompt = () => {
+      const newCat = prompt("Enter new category name (e.g. SOUPS, BURGERS):");
+      if (newCat && newCat.trim() !== "") {
+        const catName = newCat.trim().toUpperCase();
+        
+        // Add to datalist
+        const datalist = document.getElementById("category-list");
+        const option = document.createElement("option");
+        option.value = catName;
+        datalist.appendChild(option);
+        
+        // Set the input value
+        document.getElementById("menu-category").value = catName;
+      }
+    };
+    // ====================================
+
+    // ====== EDIT MENU LOGIC ======
+    let allMenuItems = [];
+    let editingItemId = null;
+
+    window.editMenuItem = (id) => {
+      const item = allMenuItems.find(m => m.id === id);
+      if (!item) return;
+
+      document.getElementById('form-title').innerText = "Edit Menu Item";
+      document.getElementById('menu-name').value = item.name;
+      document.getElementById('menu-desc').value = item.description;
+      document.getElementById('menu-price').value = item.price;
+      document.getElementById('menu-category').value = item.category;
+      
+      document.getElementById('btn-submit').innerText = "Update Item";
+      document.getElementById('btn-submit').classList.replace('bg-[#1A1A1A]', 'bg-green-600');
+      document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+      editingItemId = id;
+      document.getElementById('add-menu-form').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.cancelEdit = () => {
+      editingItemId = null;
+      document.getElementById('add-menu-form').reset();
+      document.getElementById('form-title').innerText = "Add New Menu Item";
+      document.getElementById('btn-submit').innerText = "Add Item";
+      document.getElementById('btn-submit').classList.replace('bg-green-600', 'bg-[#1A1A1A]');
+      document.getElementById('btn-cancel-edit').classList.add('hidden');
+    };
+    // =============================
+
+    let isDataLoaded = false;
+
+    function loadData() {
+      if (isDataLoaded) return;
+      isDataLoaded = true;
+
+      onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+        allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderOrders();
+      });
+
+      // Menu List Listener
+      onSnapshot(collection(db, "menu"), (snap) => {
+        allMenuItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        const html = allMenuItems.map(m => `
+          <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center border-l-4 border-[#C89B3C]">
+            <div>
+              <h4 class="font-bold text-lg">${m.name}</h4>
+              <p class="text-xs text-gray-500">${m.category} | £${m.price.toFixed(2)}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editMenuItem('${m.id}')" class="text-blue-600 hover:text-blue-800 font-bold px-3 py-1 bg-blue-50 rounded transition">Edit</button>
+              <button onclick="deleteMenuItem('${m.id}')" class="text-red-500 hover:text-red-700 font-bold px-3 py-1 bg-red-50 rounded transition">Delete</button>
+            </div>
+          </div>
+        `).join("");
+        
+        document.getElementById("menu-list").innerHTML = html || '<p class="text-gray-500">No items added.</p>';
+      });
+
+      onSnapshot(query(collection(db, "reservations"), orderBy("createdAt", "desc")), (snap) => {
+        const html = snap.docs.map(d => {
+          const r = d.data();
+          return `<div class="bg-white p-5 rounded-lg shadow-md border-l-4 ${r.status === 'confirmed' ? 'border-green-500' : r.status === 'cancelled' ? 'border-red-500' : 'border-blue-500'}">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-lg">${r.customerName}</span>
+              <span class="text-xs px-2 py-1 rounded font-bold uppercase ${r.status === 'confirmed' ? 'bg-green-100 text-green-700' : r.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${r.status}</span>
+            </div>
+            <p class="text-xs text-gray-400 mb-2">🕒 Requested: ${formatDate(r.createdAt)}</p>
+            <p class="text-sm text-gray-600">📞 ${r.customerPhone}</p>
+            <p class="text-sm text-gray-600 mb-2 font-semibold text-blue-600">📅 Booking: ${r.date} at ${r.timeSlot} | 👥 ${r.partySize} guests</p>
+            <div class="flex gap-2 mt-2 border-t pt-2">
+              ${r.status === 'pending' ? `
+                <button onclick="updateBooking('${d.id}', 'confirmed')" class="flex-1 bg-green-600 text-white py-1.5 rounded text-sm font-semibold hover:bg-green-700">Confirm</button>
+                <button onclick="updateBooking('${d.id}', 'cancelled')" class="flex-1 bg-red-600 text-white py-1.5 rounded text-sm font-semibold hover:bg-red-700">Cancel</button>
+              ` : `<p class="text-xs text-gray-500 text-center w-full py-1">Processed</p>`}
+            </div>
+          </div>`;
+        }).join("");
+        document.getElementById("bookings-list").innerHTML = html || '<p class="text-gray-500">No reservations yet</p>';
+      });
+
+      // Form Submit (Add or Update)
+      document.getElementById("add-menu-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        
+        const itemData = {
+          name: fd.get("name"),
+          description: fd.get("description"),
+          price: parseFloat(fd.get("price")),
+          category: fd.get("category"),
+          isAvailable: true
+        };
+
+        try {
+          if (editingItemId) {
+            await updateDoc(doc(db, "menu", editingItemId), itemData);
+            alert("Item updated successfully!");
+            cancelEdit();
+          } else {
+            await addDoc(collection(db, "menu"), itemData);
+            e.target.reset();
+            alert("Item added successfully!");
+          }
+        } catch (err) {
+          alert("Error: " + err.message);
+        }
+      });
+    }
+
+    window.updateOrder = async (id, status) => { await updateDoc(doc(db, "orders", id), { status: status }); };
+    window.updateBooking = async (id, status) => { await updateDoc(doc(db, "reservations", id), { status: status }); };
+    window.deleteMenuItem = async (id) => {
+      if(confirm("Are you sure you want to delete this item?")) { await deleteDoc(doc(db, "menu", id)); }
+    };
+  </script>
+</body>
+</html>
