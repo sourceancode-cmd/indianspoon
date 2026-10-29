@@ -14,7 +14,6 @@ export async function onRequestPost(context) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        'payment_method_types[]': 'card',
         'line_items[0][price_data][currency]': 'gbp',
         'line_items[0][price_data][product_data][name]': 'Indian Spoon Order',
         'line_items[0][price_data][unit_amount]': Math.round(amount * 100),
