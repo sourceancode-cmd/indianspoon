@@ -2,15 +2,177 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Payment Successful</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Receipt - Indian Spoon</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Open Sans', sans-serif; }
+    @media print {
+      body * { visibility: hidden; }
+      #receipt-box, #receipt-box * { visibility: visible; }
+      #receipt-box { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
 </head>
-<body class="bg-[#FDFBF7] h-screen flex items-center justify-center text-center p-4">
-  <div class="bg-white p-10 rounded-lg shadow-xl border-t-4 border-green-500 max-w-md w-full">
-    <div class="text-6xl mb-4">🎉</div>
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Payment Successful!</h1>
-    <p class="text-gray-500 mb-8">Thank you for your order. Your food is being prepared.</p>
-    <a href="index.html" class="bg-[#1A1A1A] text-[#C89B3C] px-8 py-3 rounded font-bold hover:bg-black transition w-full block">Back to Home</a>
+<body class="bg-[#FDFBF7] font-sans text-[#1A1A1A] min-h-screen py-10 px-4">
+
+  <div class="max-w-2xl mx-auto">
+    
+    <!-- Success Message -->
+    <div class="text-center mb-6 no-print">
+      <div class="text-6xl mb-2">🎉</div>
+      <h1 class="text-3xl font-bold text-green-600 mb-2">Order Successful!</h1>
+      <p class="text-gray-500">Thank you for your order. Here is your receipt.</p>
+    </div>
+
+    <!-- Receipt Box -->
+    <div id="receipt-box" class="bg-white p-8 rounded-lg shadow-xl border-t-4 border-[#C89B3C]">
+      <div id="loading-msg" class="text-center py-10 text-gray-500 italic">Loading receipt data...</div>
+
+      <div id="receipt-content" class="hidden">
+        <!-- Header -->
+        <div class="text-center border-b-2 border-gray-200 pb-4 mb-4">
+          <h1 class="text-3xl font-serif text-[#C89B3C] font-bold">Indian Spoon</h1>
+          <p class="text-xs text-gray-500 mt-1">The Bridge, Norwich Road, Hoveton, Wroxham, NR12 8DA</p>
+          <p class="text-xs text-gray-500">Phone: 01603320231</p>
+        </div>
+        
+        <!-- Customer Info -->
+        <div class="flex justify-between text-sm mb-6">
+          <div>
+            <p class="font-bold text-gray-800 mb-1">Customer:</p>
+            <p id="cust-name" class="font-semibold"></p>
+            <p id="cust-phone" class="text-gray-600"></p>
+            <p id="order-type" class="text-gray-600 mt-1 font-semibold text-blue-600"></p>
+          </div>
+          <div class="text-right">
+            <p class="font-bold text-gray-800 mb-1">Order Details:</p>
+            <p id="order-date" class="text-gray-600"></p>
+            <p id="pay-method" class="text-gray-600"></p>
+            <p id="pref-time" class="text-gray-600"></p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="w-full text-left text-sm mb-4">
+          <thead>
+            <tr class="border-b border-gray-300">
+              <th class="py-2">Item</th>
+              <th class="py-2 text-center">Qty</th>
+              <th class="py-2 text-right">Price</th>
+            </tr>
+          </thead>
+          <tbody id="items-list">
+            <!-- Items injected here -->
+          </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="w-1/2 ml-auto text-sm space-y-1">
+          <div class="flex justify-between"><span class="text-gray-500">Subtotal:</span> <span id="sub-total"></span></div>
+          <div id="discount-row" class="flex justify-between text-green-600 hidden"><span>Discount:</span> <span id="disc-amt"></span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Bag Charge:</span> <span id="bag-chg"></span></div>
+          <div class="flex justify-between font-bold text-lg border-t border-gray-800 pt-2 mt-2 text-[#C89B3C]">
+            <span>Total Paid:</span> <span id="grand-total"></span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-xs text-gray-500 mt-8 border-t border-gray-200 pt-4">
+          <p class="font-bold">Thank you for dining with us!</p>
+          <p>Please ask a member of staff if you have any allergies.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center mt-6 no-print flex gap-2 justify-center">
+      <button onclick="window.print()" class="bg-[#1A1A1A] text-[#C89B3C] px-6 py-2 rounded font-bold hover:bg-black transition">🖨️ Print Receipt</button>
+      <a href="index.html" class="bg-white border-2 border-[#C89B3C] text-[#1A1A1A] px-6 py-2 rounded font-bold hover:bg-gray-50 transition">Back to Home</a>
+    </div>
+
   </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9ilYCitIbojfjZCawtN63CPdGjyD9l44",
+      authDomain: "indianspoon-21587.firebaseapp.com",
+      projectId: "indianspoon-21587",
+      storageBucket: "indianspoon-21587.firebasestorage.app",
+      messagingSenderId: "1095985645179",
+      appId: "1:1095985645179:web:a6703f9fffcfe5dc5d84de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadReceipt() {
+      const orderId = localStorage.getItem("lastOrderId");
+      
+      if (!orderId) {
+        document.getElementById("loading-msg").innerText = "No recent order found.";
+        return;
+      }
+
+      try {
+        const docRef = doc(db, "orders", orderId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const order = docSnap.data();
+          const date = order.createdAt ? order.createdAt.toDate() : new Date();
+
+          // Hide loading, show content
+          document.getElementById("loading-msg").classList.add("hidden");
+          document.getElementById("receipt-content").classList.remove("hidden");
+
+          // Populate Data
+          document.getElementById("cust-name").innerText = order.customerName;
+          document.getElementById("cust-phone").innerText = "📞 " + order.customerPhone;
+          document.getElementById("order-type").innerText = "Type: " + (order.orderType || 'Collection').toUpperCase();
+          
+          document.getElementById("order-date").innerText = "Date: " + date.toLocaleString('en-GB');
+          document.getElementById("pay-method").innerText = order.paymentMethod === 'stripe' ? "💳 Paid Online" : "💵 Pay at Restaurant";
+          document.getElementById("pref-time").innerText = order.preferredTime ? "⏰ Time: " + order.preferredTime : "";
+
+          // Items
+          document.getElementById("items-list").innerHTML = order.items.map(i => `
+            <tr class="border-b border-gray-100">
+              <td class="py-2">${i.name}</td>
+              <td class="py-2 text-center">${i.qty}</td>
+              <td class="py-2 text-right">£${(i.price * i.qty).toFixed(2)}</td>
+            </tr>
+          `).join("");
+
+          // Totals
+          const subtotal = order.subtotal || (order.total - (order.bagCharge || 0) + (order.discount || 0));
+          document.getElementById("sub-total").innerText = `£${subtotal.toFixed(2)}`;
+          
+          if (order.discount > 0) {
+            document.getElementById("discount-row").classList.remove("hidden");
+            document.getElementById("disc-amt").innerText = `- £${order.discount.toFixed(2)}`;
+          }
+          
+          document.getElementById("bag-chg").innerText = `£${(order.bagCharge || 0).toFixed(2)}`;
+          document.getElementById("grand-total").innerText = `£${order.total.toFixed(2)}`;
+
+        } else {
+          document.getElementById("loading-msg").innerText = "Order not found in database.";
+        }
+      } catch (error) {
+        console.error(error);
+        document.getElementById("loading-msg").innerText = "Error loading receipt.";
+      }
+    }
+
+    // Run on page load
+    loadReceipt();
+  </script>
 </body>
 </html>
