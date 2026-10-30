@@ -19,7 +19,7 @@
   <!-- Header -->
   <header class="bg-[#1A1A1A] border-b-2 border-[#C89B3C] text-white py-4 px-4 md:px-6 flex justify-between items-center sticky top-0 z-40 shadow-lg">
     
-    <!-- Logo (Click to go Home, 5 clicks for Admin) -->
+    <!-- Logo -->
     <div id="secret-logo" class="text-2xl md:text-3xl font-serif text-brand-gold tracking-wider cursor-pointer select-none">
       Indian Spoon
     </div>
@@ -32,31 +32,24 @@
     
     <!-- Right Side Buttons -->
     <div class="flex items-center gap-3">
-      <!-- Mobile Home Button (Visible only on small screens) -->
-      <a href="index.html" class="md:hidden text-sm font-bold text-gray-300 hover:text-brand-gold transition">
-        Home
-      </a>
-      
-      <!-- Order Online Button -->
-      <a href="order.html" class="brand-gold text-[#1A1A1A] px-4 md:px-6 py-2 md:py-2.5 rounded-sm font-bold text-xs md:text-sm tracking-wider hover-brand-gold transition shadow-md">
-        ORDER ONLINE
-      </a>
+      <a href="index.html" class="md:hidden text-sm font-bold text-gray-300 hover:text-brand-gold transition">Home</a>
+      <a href="order.html" class="brand-gold text-[#1A1A1A] px-4 md:px-6 py-2 md:py-2.5 rounded-sm font-bold text-xs md:text-sm tracking-wider hover-brand-gold transition shadow-md">ORDER ONLINE</a>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto p-4 md:p-8 grid md:grid-cols-3 gap-8 min-h-screen">
+  <main class="max-w-7xl mx-auto p-4 md:p-8 grid md:grid-cols-3 gap-8 min-h-screen relative">
     
     <!-- Menu Section -->
-    <section class="md:col-span-2">
+    <section class="md:col-span-2 pb-20 md:pb-0">
       <h2 class="text-3xl font-serif text-[#1A1A1A] mb-8 mt-4 border-b-2 border-[#C89B3C] pb-2 inline-block">Our Menu</h2>
       <div id="menu-container" class="space-y-4">
         <p class="text-gray-500 italic">Loading menu...</p>
       </div>
     </section>
 
-    <!-- Cart Section -->
-    <aside>
+    <!-- Cart Section (ID added for scrolling) -->
+    <aside id="cart-section">
       <div class="sticky top-24 border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden">
         <div class="bg-[#1A1A1A] text-brand-gold p-5 text-xl font-serif font-bold border-b border-[#C89B3C]">Your Order</div>
         <div class="p-5">
@@ -96,6 +89,14 @@
       </div>
     </aside>
   </main>
+
+  <!-- Floating Mobile Cart Button -->
+  <div id="floating-cart" class="fixed bottom-6 right-4 md:hidden z-40 hidden">
+    <button onclick="scrollToCart()" class="brand-gold text-[#1A1A1A] px-5 py-3 rounded-full font-bold shadow-2xl flex items-center gap-2 border-2 border-white">
+      <span class="text-xl">🛒</span>
+      <span>View Cart (<span id="mobile-cart-count">0</span>)</span>
+    </button>
+  </div>
 
   <!-- Checkout Modal -->
   <div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4">
@@ -154,7 +155,7 @@
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-4 right-4 bg-[#C89B3C] text-white px-6 py-3 rounded-md shadow-lg hidden z-50 font-bold"></div>
+  <div id="toast" class="fixed bottom-24 md:bottom-4 right-4 bg-[#1A1A1A] text-white px-6 py-3 rounded-md shadow-lg hidden z-50 font-bold border-l-4 border-[#C89B3C]"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -177,14 +178,14 @@
     let discountPercent = 0; 
     const BAG_CHARGE = 0.20;
 
-    // Logo Click Logic (5 clicks for Admin, 1 click for Home)
+    // Logo Click Logic
     let clickCount = 0;
     let clickTimer;
     document.getElementById("secret-logo").addEventListener("click", () => {
       clickCount++;
       clearTimeout(clickTimer);
       clickTimer = setTimeout(() => { 
-        if (clickCount === 1) window.location.href = "index.html"; // 1 click goes home
+        if (clickCount === 1) window.location.href = "index.html"; 
         clickCount = 0; 
       }, 500);
       
@@ -193,7 +194,12 @@
       }
     });
 
-    // Fetch Menu from Firestore
+    // Scroll to Cart Function
+    window.scrollToCart = () => {
+      document.getElementById('cart-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    // Fetch Menu
     onSnapshot(collection(db, "menu"), (snap) => {
       menuDataGrouped = {};
       snap.forEach(d => {
@@ -258,18 +264,16 @@
       if (existing) existing.qty++;
       else cart.push({ ...item, qty: 1 });
       renderCart();
-      showToast(`${item.name} added`);
+      showToast(`${item.name} added to cart`);
     };
 
-    // Dynamic Coupon Logic
+    // Coupon Logic
     window.applyVoucher = async () => {
       const code = document.getElementById("voucher-code").value.trim().toUpperCase();
       if (!code) return;
-
       try {
         const q = query(collection(db, "coupons"), where("code", "==", code), where("isActive", "==", true));
         const snap = await getDocs(q);
-
         if (!snap.empty) {
           const coupon = snap.docs[0].data();
           discountPercent = coupon.discountPercent;
@@ -286,6 +290,18 @@
 
     function renderCart() {
       const cartDiv = document.getElementById("cart-items");
+      
+      // Mobile Floating Cart Button Logic
+      const mobileCartBtn = document.getElementById("floating-cart");
+      const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+      
+      if (totalItems > 0) {
+        mobileCartBtn.classList.remove("hidden");
+        document.getElementById("mobile-cart-count").textContent = totalItems;
+      } else {
+        mobileCartBtn.classList.add("hidden");
+      }
+
       if (cart.length === 0) {
         cartDiv.innerHTML = '<p class="text-sm text-gray-500 italic">Your cart is empty.</p>';
         document.getElementById("cart-total").textContent = "";
@@ -324,24 +340,14 @@
       renderCart();
     };
 
-    // ===== CHECKOUT LOGIC =====
     window.openCheckout = () => {
       if (cart.length === 0) return alert("Cart is empty");
-      
-      // Time cutoff logic
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      if (hours > 22 || (hours === 22 && minutes > 30)) {
-        return alert("Sorry, we do not take online orders after 22:30.");
-      }
-
+      if (now.getHours() > 22 || (now.getHours() === 22 && now.getMinutes() > 30)) return alert("Sorry, we do not take online orders after 22:30.");
       document.getElementById("checkout-modal").classList.remove("hidden");
     };
 
-    window.closeCheckout = () => {
-      document.getElementById("checkout-modal").classList.add("hidden");
-    };
+    window.closeCheckout = () => document.getElementById("checkout-modal").classList.add("hidden");
 
     window.submitOrder = async (method) => {
       const name = document.getElementById("checkout-name").value.trim();
@@ -377,7 +383,7 @@
       if (method === 'stripe') {
         try {
           const docRef = await addDoc(collection(db, "orders"), orderData);
-          localStorage.setItem("lastOrderId", docRef.id); // Save ID for Success Page
+          localStorage.setItem("lastOrderId", docRef.id);
 
           const response = await fetch('/api/checkout', {
             method: 'POST',
@@ -386,26 +392,15 @@
           });
           
           const data = await response.json();
-          if (data.url) {
-            window.location.href = data.url; 
-          } else {
-            alert("Stripe Error: " + (data.error || "Unknown error"));
-          }
-        } catch (error) {
-          alert("Error: " + error.message);
-        }
+          if (data.url) window.location.href = data.url; 
+          else alert("Stripe Error: " + (data.error || "Unknown error"));
+        } catch (error) { alert("Error: " + error.message); }
       } else {
         try {
           const docRef = await addDoc(collection(db, "orders"), orderData);
-          localStorage.setItem("lastOrderId", docRef.id); // Save ID for Success Page
-          
-          cart = [];
-          renderCart();
-          closeCheckout();
-          window.location.href = "success.html"; // Redirect to receipt
-        } catch (e) {
-          alert("Error: " + e.message);
-        }
+          localStorage.setItem("lastOrderId", docRef.id);
+          cart = []; renderCart(); closeCheckout(); window.location.href = "success.html"; 
+        } catch (e) { alert("Error: " + e.message); }
       }
     };
 
@@ -413,7 +408,7 @@
       const t = document.getElementById("toast");
       t.textContent = msg;
       t.classList.remove("hidden");
-      setTimeout(() => t.classList.add("hidden"), 3000);
+      setTimeout(() => t.classList.add("hidden"), 2000);
     }
   </script>
 </body>
